@@ -1,7 +1,8 @@
 let transactions = [];
 let myChart;
 
-fetch("/api/transaction")
+function populate() {
+  fetch("/api/transaction")
   .then(response => {
     return response.json();
   })
@@ -13,6 +14,10 @@ fetch("/api/transaction")
     populateTable();
     populateChart();
   });
+}
+
+// Run initially
+populate();
 
 function populateTotal() {
   // reduce transaction amounts to a single total value
@@ -29,9 +34,12 @@ function populateTable() {
   tbody.innerHTML = "";
 
   transactions.forEach(transaction => {
+    let date = new Date(`${transaction.date}`)
+
     // create and populate a table row
     let tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${date.toDateString()}</td>
       <td>${transaction.name}</td>
       <td>${transaction.value}</td>
     `;
@@ -79,9 +87,12 @@ function populateChart() {
 }
 
 function sendTransaction(isAdding) {
+  let dateE1 = document.querySelector("#t-date");
   let nameEl = document.querySelector("#t-name");
   let amountEl = document.querySelector("#t-amount");
   let errorEl = document.querySelector(".form .error");
+  
+  let transactionDate = new Date(dateE1.value);
 
   // validate form
   if (nameEl.value === "" || amountEl.value === "") {
@@ -94,9 +105,9 @@ function sendTransaction(isAdding) {
 
   // create record
   let transaction = {
+    date: transactionDate.toISOString(),
     name: nameEl.value,
     value: amountEl.value,
-    date: new Date().toISOString()
   };
 
   // if subtracting funds, convert amount to negative number
@@ -108,9 +119,7 @@ function sendTransaction(isAdding) {
   transactions.unshift(transaction);
 
   // re-run logic to populate ui with new record
-  populateChart();
-  populateTable();
-  populateTotal();
+  populate();
   
   // also send to server
   fetch("/api/transaction", {
@@ -130,6 +139,7 @@ function sendTransaction(isAdding) {
     }
     else {
       // clear form
+      dateE1.value= "";
       nameEl.value = "";
       amountEl.value = "";
     }
@@ -139,6 +149,7 @@ function sendTransaction(isAdding) {
     saveRecord(transaction);
 
     // clear form
+    dateE1.value = "";
     nameEl.value = "";
     amountEl.value = "";
   });
